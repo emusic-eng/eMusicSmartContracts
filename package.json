@@ -1,0 +1,22 @@
+{
+  "name": "emusic-smart-contracts",
+  "version": "1.0.0",
+  "description": "eMusic's smart contracts",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate_abi_bin": "cd node_modules && solcjs ../contracts/EMU.sol --bin --abi --optimize openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol openzeppelin-solidity/contracts/lifecycle/Destructible.sol openzeppelin-solidity/contracts/ownership/Ownable.sol openzeppelin-solidity/contracts/token/ERC20/BasicToken.sol openzeppelin-solidity/contracts/token/ERC20/ERC20.sol openzeppelin-solidity/contracts/math/SafeMath.sol openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol -o ../output"
+  },
+  "author": "Nir Peled",
+  "license": "ISC",
+  "devDependencies": {
+    "solc": "^0.4.24"
+  },
+  "dependencies": {
+    "openzeppelin-solidity": "^1.11.0",
+    "truffle-hdwallet-provider": "^0.0.6"
+  }
+}
