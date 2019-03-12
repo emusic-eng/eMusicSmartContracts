@@ -7,16 +7,20 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "generate_abi_bin": "cd node_modules && solcjs ../contracts/EMU.sol --bin --abi --optimize openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol openzeppelin-solidity/contracts/lifecycle/Destructible.sol openzeppelin-solidity/contracts/ownership/Ownable.sol openzeppelin-solidity/contracts/token/ERC20/BasicToken.sol openzeppelin-solidity/contracts/token/ERC20/ERC20.sol openzeppelin-solidity/contracts/math/SafeMath.sol openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol -o ../output"
+    "compile": "truffle compile --all",
+    "test": "node node_modules/truffle/build/cli.bundled.js test",
+    "generate_abi_bin": "cd node_modules && solcjs ../contracts/EMTK.sol --bin --abi --optimize openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol openzeppelin-solidity/contracts/lifecycle/Destructible.sol openzeppelin-solidity/contracts/ownership/Ownable.sol openzeppelin-solidity/contracts/token/ERC20/BasicToken.sol openzeppelin-solidity/contracts/token/ERC20/ERC20.sol openzeppelin-solidity/contracts/math/SafeMath.sol openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol -o ../output",
+    "remix": "remixd -s . --remix-ide https://remix.ethereum.org"
   },
   "author": "Nir Peled",
   "license": "ISC",
-  "devDependencies": {
-    "solc": "^0.4.24"
-  },
   "dependencies": {
-    "openzeppelin-solidity": "^1.11.0",
-    "truffle-hdwallet-provider": "^0.0.6"
+    "openzeppelin-test-helpers": "^0.1.2",
+    "ganache-cli": "^6.4.1",
+    "mocha": "^6.0.2",
+    "openzeppelin-solidity": "^2.1.3",
+    "truffle": "5.0.2",
+    "truffle-hdwallet-provider": "^0.0.5",
+    "web3": "^1.0.0-beta.48"
   }
 }
