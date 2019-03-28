@@ -3,6 +3,18 @@ pragma solidity ^0.5.0;
 import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
+/**
+ * An Ownable ERC20 token that limits token holder ability to transfer token only to list of allowed addresses.
+ * When the contract's deployed, only the owner can transfer tokens to anyone
+ * When a wallet receives tokens for the first time, it is assigned an unlock date, set to now + _lockDuration
+ * Before the unlock date elapses those accounts can only transfer tokens to allowed addresses.
+ * Once the unlock date elapses the token holder can transfer tokens normally to anyone
+ * The owner can list, add and remove allowed addresses.
+ * Any token holder can check their own unlock date
+ * The owner can check any token holder's unlock date
+ * The owner can stop locking transactions globally. This can only be done once and is irreversible.
+ * Once performed, the contract behaves like a regular ERC20
+ */
 contract Lockable is ERC20, Ownable {
     uint256 internal _lockDuration;
 
