@@ -4,14 +4,15 @@ import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 /**
-// TODO: revise this, consider explaining receiver and sender
-
- * An Ownable ERC20 token that limits token holder ability to transfer token only to list of allowed addresses.
+ * An Ownable ERC20 token that for a set time, limits token holder ability to transfer token only to list of allowed receiver addresses.
  * When the contract's deployed, only the owner can transfer tokens to anyone
  * When a wallet receives tokens for the first time, it is assigned an unlock date, set to now + _lockDuration
- * Before the unlock date elapses those accounts can only transfer tokens to allowed addresses.
+ * Before the unlock date elapses those accounts can only transfer tokens to allowed receiver addresses.
  * Once the unlock date elapses the token holder can transfer tokens normally to anyone
- * The owner can list, add and remove allowed addresses.
+ * The owner can list, add and remove allowed receiver addresses.
+ * The owner can list, add and remove allowed sender addresses.
+ * Wallets listed in the allowed sender addresses can transfer tokens to anyone without waiting the _lockDuration
+ * A wallet that has elapsed the unlock date, can transfer tokens to anyone. Those recipients can transfer the token onward without a waiting period
  * Any token holder can check their own unlock date
  * The owner can check any token holder's unlock date
  * The owner can stop locking transactions globally. This can only be done once and is irreversible.
