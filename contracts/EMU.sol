@@ -12,5 +12,6 @@ contract EMU is Lockable {
     constructor() public {
         _mint(msg.sender, INITIAL_SUPPLY);
         _lockDuration = 60 * 60 * 24 * LOCK_DURATION_IN_DAYS;
+        addAllowedSenderAddress(msg.sender);
     }
 }

@@ -27,7 +27,7 @@ contract Lockable is ERC20, Ownable {
 
     mapping(address => bool) private _allowedReceiverAddressMap;
     address[] private _allowedReceiverAddressArray;
-    
+
     mapping(address => bool) private _allowedSenderAddressMap;
     address[] private _allowedSenderAddressArray;
 
@@ -77,10 +77,10 @@ contract Lockable is ERC20, Ownable {
         _removeAllowedAddress(_address, _allowedReceiverAddressMap, _allowedReceiverAddressArray);
     }
 
-     /**** SENDER ZONE ****/
-     /**
-     * @return the entire list of allowed sender addresses
-     */
+    /**** SENDER ZONE ****/
+    /**
+    * @return the entire list of allowed sender addresses
+    */
     function allowedSenderAddresses() public view onlyOwner returns (address[] memory) {
         return _allowedSenderAddressArray;
     }
@@ -122,7 +122,7 @@ contract Lockable is ERC20, Ownable {
             return true;
         }
 
-        if (_allowedSenderAddressMap[_to] ) {
+        if (_allowedSenderAddressMap[_to]) {
             // don't bother assigning an unlock date to allowed addresses
             return true;
         }
@@ -154,7 +154,7 @@ contract Lockable is ERC20, Ownable {
 
         // Require the "to" address is in the allowed list or time has elapsed or the the sender is allowed (or is owner)
         require(_allowedSenderAddressMap[msg.sender] || _allowedReceiverAddressMap[to] ||
-                _unlockDates[msg.sender] <= now || msg.sender == owner());
+            (_unlockDates[msg.sender] > 0 &&_unlockDates[msg.sender] <= now));
 
         // transfer the token amount
         super.transfer(to, value);
@@ -174,7 +174,7 @@ contract Lockable is ERC20, Ownable {
         }
 
         // Require the "to" address is in the allowed list or time has elapsed or you're the owner
-        require(_allowedReceiverAddressMap[to] || _unlockDates[from] <= now || msg.sender == owner() || from == owner());
+        require(_allowedSenderAddressMap[from] || _allowedReceiverAddressMap[to] || (_unlockDates[from] > 0 &&_unlockDates[from] <= now));
 
         // transfer the token amount
         super.transferFrom(from, to, value);

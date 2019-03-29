@@ -5,6 +5,11 @@ const BigNumber = BN;
 const EmuToken = artifacts.require('EMU');
 const debug = false;
 
+// TODO: add test for doesn't let non-owner to read allowedSenderAddress
+// TODO: change 'recipient' to 'user wallet 1' where appropriate
+// TODO: add allow spender to transfer to allowed recipient test to the last context
+// TODO: test situations where the owner is approved to spend on behalf of the user, and where they can and can't transfer to (using transferFrom)
+// TODO: implement tests with 'nonAllowedSenderAddress'
 async function expectThrow(promise, message) {
     try {
         await promise;
@@ -143,7 +148,7 @@ contract('EMU', function ([_, owner, recipient, spender, allowedReceiverAddress,
 
     it("lets owner add and remove allowedSenderAddress", async () => {
         let result = await this.token.allowedSenderAddresses({from: owner});
-        result.length.should.be.equal(0);
+        result.length.should.be.equal(1);
 
         await this.token.addAllowedSenderAddress(allowedSenderAddress, {from: owner});
 
@@ -167,24 +172,25 @@ contract('EMU', function ([_, owner, recipient, spender, allowedReceiverAddress,
         foundAllowedSenderAddress.should.be.equal(false);
     });
 
-    context("allowedReceiverAddress is allowed", async () => {
+    context("allowedReceiverAddress and allowedSenderAddress are approved", async () => {
         beforeEach(async () => {
             if (debug) console.log("");
             await this.token.addAllowedReceiverAddress(allowedReceiverAddress, {from: owner});
+            await this.token.addAllowedSenderAddress(allowedSenderAddress, {from: owner});
         });
 
-        context("recipient has some token and allowedReceiverAddress is allowed", async () => {
+        // TODO: add context for non-allowed sender that already passed time limit
+        context("recipient has some token received from allowed sender (owner)", async () => {
             beforeEach(async () => {
                 if (debug) console.log("");
                 let unlockDateResult = await this.token.unlockDateOf(recipient, {from: owner});
                 unlockDateResult.should.be.bignumber.equal(new BigNumber(0));
                 let myUnlockDateResult = await this.token.myUnlockDate({from: recipient});
                 unlockDateResult.should.be.bignumber.equal(myUnlockDateResult);
-
                 await this.token.transfer(recipient, amount, {from: owner});
             });
 
-            it("assigns unlockDates to transfer recipients", async () => {
+            it("assigns future unlockDate to transfer recipient", async () => {
                 const blockchainDate = dateify(await time.latest(), debug);
                 if (debug) console.log("blockchainDate: " + blockchainDate);
                 let unlockDateResult = await this.token.unlockDateOf(recipient, {from: owner});
@@ -193,33 +199,17 @@ contract('EMU', function ([_, owner, recipient, spender, allowedReceiverAddress,
                 if (debug) console.log("unlockDate: " + unlockDate);
 
                 const lockDurationInDays = (unlockDate.getTime() - blockchainDate.getTime()) / (1000 * time.duration.days(1));
-
-                unlockDate.should.be.above(blockchainDate);
+                unlockDate.should.be.above(blockchainDate); // Should be ~40 days in the future
 
                 let percentDeviationOffDuration = Math.abs((lockDurationInDays / 40) - 1);
                 if (debug) {
                     console.log("percentDeviationOffDuration: " + percentDeviationOffDuration);
                 }
                 percentDeviationOffDuration.should.be.below(0.01);
-
             });
 
-            it("prevents recipients from transferring to non-allowed addresses before unlockDate elapsed",
-                async () => {
-                    await expectThrow(this.token.transfer(nonAllowedReceiverAddress, amount, {from: recipient}));
-                });
-
-            it("allows recipients to transfer to non-allowed addresses once we stopped locking transfers", async () => {
-                let lockingTransfers = await this.token.lockingTransfers();
-                lockingTransfers.should.be.equal(true);
-
-                if (debug) console.log("stopped locking");
-                await this.token.stopLockingTransfers({from: owner});
-
-                lockingTransfers = await this.token.lockingTransfers();
-                lockingTransfers.should.be.equal(false);
-
-                await this.token.transfer(nonAllowedReceiverAddress, amount, {from: recipient});
+            it("prevents recipients from transferring to non-allowed addresses before unlockDate elapsed", async () => {
+                await expectThrow(this.token.transfer(nonAllowedReceiverAddress, amount, {from: recipient}));
             });
 
             it("allows recipients to transfer to non-allowed addresses once unlockDate elapsed", async () => {
@@ -238,18 +228,24 @@ contract('EMU', function ([_, owner, recipient, spender, allowedReceiverAddress,
             context("locking has been stopped", async () => {
                 beforeEach(async () => {
                     if (debug) console.log("");
+                    let lockingTransfers = await this.token.lockingTransfers();
+                    lockingTransfers.should.be.equal(true);
+
+                    if (debug) console.log("stopped locking");
                     await this.token.stopLockingTransfers({from: owner});
+
+                    lockingTransfers = await this.token.lockingTransfers();
+                    lockingTransfers.should.be.equal(false);
                 });
 
                 it("allows recipients to transfer to non-allowed addresses before unlockDate elapsed", async () => {
                     await this.token.transfer(nonAllowedReceiverAddress, amount, {from: recipient});
-
                     let balance = await this.token.balanceOf(nonAllowedReceiverAddress);
                     balance.should.be.bignumber.equal(amount);
                 });
 
                 describe("no longer locking transfers permission checks", async () => {
-
+                    // TODO: add tests for allowedSenderAddresses
                     it("doesn't let owner add allowedReceiverAddress", async () => {
                         await expectThrow(this.token.addAllowedReceiverAddress(allowedReceiverAddress, {from: owner}));
                     });
@@ -276,27 +272,19 @@ contract('EMU', function ([_, owner, recipient, spender, allowedReceiverAddress,
                     });
                 });
             });
+
             context("recipient approved spender to spend their entire balance", async () => {
                 beforeEach(async () => {
                     if (debug) console.log("");
                     await this.token.approve(spender, amount, {from: recipient});
                 });
 
-                it("prevents spender from transferring to non-allowed addresses before unlockDate elapsed",
-                    async () => {
-                        await expectThrow(this.token.transferFrom(recipient, nonAllowedReceiverAddress, amount, {from: spender}));
-                    });
+                it("prevents spender from transferring to non-allowed addresses before unlockDate elapsed", async () => {
+                    await expectThrow(this.token.transferFrom(recipient, nonAllowedReceiverAddress, amount, {from: spender}));
+                });
 
                 it("allows spender to transfer to non-allowed addresses once we stopped locking transfers", async () => {
-                    let lockingTransfers = await this.token.lockingTransfers();
-                    lockingTransfers.should.be.equal(true);
-
-                    if (debug) console.log("stopped locking");
                     await this.token.stopLockingTransfers({from: owner});
-
-                    lockingTransfers = await this.token.lockingTransfers();
-                    lockingTransfers.should.be.equal(false);
-
                     await this.token.transferFrom(recipient, nonAllowedReceiverAddress, amount, {from: spender});
                 });
 
