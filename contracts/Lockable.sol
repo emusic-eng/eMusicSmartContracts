@@ -22,40 +22,78 @@ contract Lockable is ERC20, Ownable {
 
     mapping(address => uint256) private _unlockDates;
 
-    mapping(address => bool) private _allowedAddresses;
-    address[] private _allowedAddressArray;
+    mapping(address => bool) private _allowedReceiverAddressMap;
+    address[] private _allowedReceiverAddressArray;
+    
+    mapping(address => bool) private _allowedSenderAddressMap;
+    address[] private _allowedSenderAddressArray;
 
-    /**
-     * @return the entire list of allowed addresses
-     */
-    function allowedAddresses() public view onlyOwner returns (address[] memory) {
-        return _allowedAddressArray;
-    }
-
-    /**
-     * add an address to the list of allowedAddresses
-     */
-    function addAllowedAddress(address _address) public onlyOwner whenLockingTransfers {
-        if (!_allowedAddresses[_address]) {
-            _allowedAddressArray.push(_address);
-            _allowedAddresses[_address] = true;
+    // TODO: add docs
+    function _addAllowedAddress(address _address, mapping(address => uint256) _addressMap, address[] _addressArray) private {
+        if (!_addressMap[_address]) {
+            _addressArray.push(_address);
+            _addressMap[_address] = true;
         }
     }
 
-    /**
-     * remove an address from the list of allowedAddresses
-     */
-    function removeAllowedAddress(address _address) public onlyOwner whenLockingTransfers {
-        _allowedAddresses[_address] = false;
+    // TODO: add docs
+    function _removeAllowedAddress(address _address, mapping(address => uint256) _addressMap, address[] _addressArray) private {
+        _addressMap[_address] = false;
 
-        for (uint i = 0; i < _allowedAddressArray.length; i++) {
-            if (_allowedAddressArray[i] == _address) {
-                delete _allowedAddressArray[i];
+        for (uint i = 0; i < _addressArray.length; i++) {
+            if (_addressArray[i] == _address) {
+                delete _addressArray[i];
                 break;
             }
         }
     }
 
+    /**** RECEIVER ZONE ****/
+    /**
+     * @return the entire list of allowed receiver addresses
+     */
+    function allowedReceiverAddresses() public view onlyOwner returns (address[] memory) {
+        return _allowedReceiverAddressArray;
+    }
+    
+    /**
+     * add an address to the list of allowedReceiverAddresses
+     */
+    function addAllowedReceiverAddress(address _address) public onlyOwner whenLockingTransfers {
+        _addAllowedAddress(_address, _allowedReceiverAddressMap, _allowedReceiverAddressArray);
+    }
+
+    /**
+     * remove an address from the list of allowedReceiverAddresses
+     */
+    function removeAllowedReceiverAddress(address _address) public onlyOwner whenLockingTransfers {
+        _removeAllowedAddress(_address, _allowedReceiverAddressMap, _allowedReceiverAddressArray);
+    }
+
+     /**** SENDER ZONE ****/
+     /**
+     * @return the entire list of allowed sender addresses
+     */
+    function allowedSenderAddresses() public view onlyOwner returns (address[] memory) {
+        return _allowedSenderAddressArray;
+    }
+    
+    /**
+     * add an address to the list of allowedSenderAddresses
+     */
+    function addAllowedSenderAddress(address _address) public onlyOwner whenLockingTransfers {
+        _addAllowedAddress(_address, _allowedSenderAddressMap, _allowedSenderAddressArray);
+    }
+
+
+    /**
+     * remove an address from the list of allowedSenderAddresses
+     */
+    function removeAllowedSenderAddress(address _address) public onlyOwner whenLockingTransfers {
+        _removeAllowedAddress(_address, _allowedSenderAddressMap, _allowedSenderAddressArray);
+    }
+
+    
     /**
      * Stop locking transfers, this cannot be undone
      */
@@ -82,7 +120,7 @@ contract Lockable is ERC20, Ownable {
         }
 
         // Require the "to" address is in the allowed list or time has elapsed or you're the owner
-        require(_allowedAddresses[to] || _unlockDates[msg.sender] <= now || msg.sender == owner());
+        require(_allowedReceiverAddressMap[to] || _unlockDates[msg.sender] <= now || msg.sender == owner());
 
         // transfer the token amount
         super.transfer(to, value);
@@ -108,7 +146,7 @@ contract Lockable is ERC20, Ownable {
         }
 
         // Require the "to" address is in the allowed list or time has elapsed or you're the owner
-        require(_allowedAddresses[to] || _unlockDates[from] <= now || msg.sender == owner() || from == owner());
+        require(_allowedReceiverAddressMap[to] || _unlockDates[from] <= now || msg.sender == owner() || from == owner());
 
         // transfer the token amount
         super.transferFrom(from, to, value);
