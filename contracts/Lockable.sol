@@ -4,6 +4,8 @@ import 'openzeppelin-solidity/contracts/ownership/Ownable.sol';
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 /**
+// TODO: revise this, consider explaining receiver and sender
+
  * An Ownable ERC20 token that limits token holder ability to transfer token only to list of allowed addresses.
  * When the contract's deployed, only the owner can transfer tokens to anyone
  * When a wallet receives tokens for the first time, it is assigned an unlock date, set to now + _lockDuration
@@ -16,6 +18,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
  * Once performed, the contract behaves like a regular ERC20
  */
 contract Lockable is ERC20, Ownable {
+    //TODO: change requires to have a second param explaining the error
     uint256 internal _lockDuration;
 
     bool public lockingTransfers = true;
@@ -28,16 +31,20 @@ contract Lockable is ERC20, Ownable {
     mapping(address => bool) private _allowedSenderAddressMap;
     address[] private _allowedSenderAddressArray;
 
-    // TODO: add docs
-    function _addAllowedAddress(address _address, mapping(address => uint256) _addressMap, address[] _addressArray) private {
+    /**
+     * adds an address from both array and map
+     */
+    function _addAllowedAddress(address _address, mapping(address => bool) storage _addressMap, address[] storage _addressArray) private {
         if (!_addressMap[_address]) {
             _addressArray.push(_address);
             _addressMap[_address] = true;
         }
     }
 
-    // TODO: add docs
-    function _removeAllowedAddress(address _address, mapping(address => uint256) _addressMap, address[] _addressArray) private {
+    /**
+     * removes an address from both array and map
+     */
+    function _removeAllowedAddress(address _address, mapping(address => bool) storage _addressMap, address[] storage _addressArray) private {
         _addressMap[_address] = false;
 
         for (uint i = 0; i < _addressArray.length; i++) {
@@ -55,7 +62,7 @@ contract Lockable is ERC20, Ownable {
     function allowedReceiverAddresses() public view onlyOwner returns (address[] memory) {
         return _allowedReceiverAddressArray;
     }
-    
+
     /**
      * add an address to the list of allowedReceiverAddresses
      */
@@ -77,7 +84,7 @@ contract Lockable is ERC20, Ownable {
     function allowedSenderAddresses() public view onlyOwner returns (address[] memory) {
         return _allowedSenderAddressArray;
     }
-    
+
     /**
      * add an address to the list of allowedSenderAddresses
      */
@@ -93,7 +100,7 @@ contract Lockable is ERC20, Ownable {
         _removeAllowedAddress(_address, _allowedSenderAddressMap, _allowedSenderAddressArray);
     }
 
-    
+
     /**
      * Stop locking transfers, this cannot be undone
      */
@@ -109,6 +116,32 @@ contract Lockable is ERC20, Ownable {
         _;
     }
 
+    function _updateUnlockDate(address _from, address _to) private returns (bool){
+        if (_unlockDates[_to] > 0 && _unlockDates[_to] <= now) {
+            // if receiver's unlock date has passed, no need to update anything
+            return true;
+        }
+
+        if (_allowedSenderAddressMap[_to] ) {
+            // don't bother assigning an unlock date to allowed addresses
+            return true;
+        }
+
+        if (!_allowedSenderAddressMap[_from]) {
+            // if receiving from unlocked user (regardless of  previous unlock date), set unlock to now
+            // an unlocked user sent you this
+            _unlockDates[_to] = now;
+        } else if (_unlockDates[_to] == 0) {
+            // an allowed sender sent you this
+            // The user has no unlockDate (first time we're transferring token to them)
+            // if so: calculate the future date and save in _unlockDates
+            _unlockDates[_to] = now + _lockDuration;
+        }
+        // The user has a future unlock date, don't update it
+
+        return true;
+    }
+
     /**
     * @dev Transfer token for a specified address, set the current timestamp
     * @param to The address to transfer to.
@@ -119,19 +152,14 @@ contract Lockable is ERC20, Ownable {
             return super.transfer(to, value);
         }
 
-        // Require the "to" address is in the allowed list or time has elapsed or you're the owner
-        require(_allowedReceiverAddressMap[to] || _unlockDates[msg.sender] <= now || msg.sender == owner());
+        // Require the "to" address is in the allowed list or time has elapsed or the the sender is allowed (or is owner)
+        require(_allowedSenderAddressMap[msg.sender] || _allowedReceiverAddressMap[to] ||
+                _unlockDates[msg.sender] <= now || msg.sender == owner());
 
         // transfer the token amount
         super.transfer(to, value);
 
-        // Check if the user has no unlockDate (first time we're transferring token to them)
-        if (_unlockDates[to] == 0) {
-            // if so: calculate the future date and save in _unlockDates
-            _unlockDates[to] = now + _lockDuration;
-        }
-
-        return true;
+        return _updateUnlockDate(msg.sender, to);
     }
 
     /**
@@ -151,13 +179,7 @@ contract Lockable is ERC20, Ownable {
         // transfer the token amount
         super.transferFrom(from, to, value);
 
-        // Check if the user has no unlockDate (first time we're transferring token to them)
-        if (_unlockDates[to] == 0) {
-            // if so: calculate the future date and save in _unlockDates
-            _unlockDates[to] = now + _lockDuration;
-        }
-
-        return true;
+        return _updateUnlockDate(from, to);
     }
 
     /**
