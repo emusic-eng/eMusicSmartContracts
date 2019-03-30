@@ -204,7 +204,6 @@ contract Lockable is ERC20, Ownable {
      * @return an address's unlock date
      */
     function updateUnlockDate(address _address, uint unlockDate) public onlyOwner whenLockingTransfers returns (bool) {
-        require(unlockDate > now, "Can only set future unlock date");
         _unlockDates[_address] = unlockDate;
         return true;
     }
