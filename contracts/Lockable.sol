@@ -113,7 +113,7 @@ contract Lockable is ERC20, Ownable {
      * @dev Modifier to make a function callable only when the contract is lockingTransfers.
      */
     modifier whenLockingTransfers() {
-        require(lockingTransfers);
+        require(lockingTransfers, "Function only available when locking transfers");
         _;
     }
 
@@ -155,7 +155,8 @@ contract Lockable is ERC20, Ownable {
 
         // Require the "to" address is in the allowed list or time has elapsed or the the sender is allowed (or is owner)
         require(_allowedSenderAddressMap[msg.sender] || _allowedReceiverAddressMap[to] ||
-            (_unlockDates[msg.sender] > 0 &&_unlockDates[msg.sender] <= now));
+            (_unlockDates[msg.sender] > 0 &&_unlockDates[msg.sender] <= now),
+            "Transfer not allowed, unlock date not yet reached");
 
         // transfer the token amount
         super.transfer(to, value);
@@ -175,7 +176,9 @@ contract Lockable is ERC20, Ownable {
         }
 
         // Require the "to" address is in the allowed list or time has elapsed or you're the owner
-        require(_allowedSenderAddressMap[from] || _allowedReceiverAddressMap[to] || (_unlockDates[from] > 0 &&_unlockDates[from] <= now));
+        require(_allowedSenderAddressMap[from] || _allowedReceiverAddressMap[to] ||
+            (_unlockDates[from] > 0 &&_unlockDates[from] <= now),
+            "Transfer not allowed, unlock date not yet reached");
 
         // transfer the token amount
         super.transferFrom(from, to, value);
@@ -201,7 +204,7 @@ contract Lockable is ERC20, Ownable {
      * @return an address's unlock date
      */
     function updateUnlockDate(address _address, uint unlockDate) public onlyOwner whenLockingTransfers returns (bool) {
-        require(unlockDate > now);
+        require(unlockDate > now, "Can only set future unlock date");
         _unlockDates[_address] = unlockDate;
         return true;
     }
