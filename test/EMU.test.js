@@ -59,10 +59,6 @@ contract('EMU', function ([_, owner, recipient, unlockedWallet, spender, allowed
     });
 
     describe("non-owner permission checks", async () => {
-        it("doesn't let non-owner to read allowedReceiverAddress", async () => {
-            await expectThrow(this.token.allowedReceiverAddresses({from: recipient}));
-        });
-
         it("doesn't let non-owner add allowedReceiverAddress", async () => {
             await expectThrow(this.token.addAllowedReceiverAddress(allowedReceiverAddress, {from: recipient}));
         });
@@ -81,10 +77,6 @@ contract('EMU', function ([_, owner, recipient, unlockedWallet, spender, allowed
 
         it("doesn't let non-owner to stop locking transfers", async () => {
             await expectThrow(this.token.stopLockingTransfers({from: recipient}));
-        });
-
-        it("doesn't let non-owner to check unlockDate", async () => {
-            await expectThrow(this.token.unlockDateOf(recipient, {from: recipient}));
         });
 
         it("doesn't let non-owner to update unlockDate", async () => {
@@ -214,7 +206,7 @@ contract('EMU', function ([_, owner, recipient, unlockedWallet, spender, allowed
                     if (debug) console.log("");
                     let unlockDateResult = await this.token.unlockDateOf(recipient, {from: owner});
                     unlockDateResult.should.be.bignumber.equal(new BigNumber(0));
-                    let myUnlockDateResult = await this.token.myUnlockDate({from: recipient});
+                    let myUnlockDateResult = await this.token.unlockDateOf(recipient, {from: recipient});
                     unlockDateResult.should.be.bignumber.equal(myUnlockDateResult);
                     await this.token.transfer(recipient, amount, {from: owner});
                 });
@@ -378,18 +370,10 @@ contract('EMU', function ([_, owner, recipient, unlockedWallet, spender, allowed
                             await expectThrow(this.token.stopLockingTransfers({from: owner}));
                         });
 
-                        it("doesn't let owner to check unlockDate", async () => {
-                            await expectThrow(this.token.unlockDateOf(recipient, {from: owner}));
-                        });
-
                         it("doesn't let owner to update unlockDate", async () => {
                             await expectThrow(this.token.updateUnlockDate(recipient, new BigNumber(0), {from: owner}));
                         });
 
-                        it("doesn't let anyone check their lock date", async () => {
-                            await expectThrow(this.token.myUnlockDate({from: owner}));
-                            await expectThrow(this.token.myUnlockDate({from: recipient}));
-                        });
                     });
                 });
             });

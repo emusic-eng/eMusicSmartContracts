@@ -60,7 +60,7 @@ contract Lockable is ERC20, Ownable {
     /**
      * @return the entire list of allowed receiver addresses
      */
-    function allowedReceiverAddresses() public view onlyOwner returns (address[] memory) {
+    function allowedReceiverAddresses() public view returns (address[] memory) {
         return _allowedReceiverAddressArray;
     }
 
@@ -82,7 +82,7 @@ contract Lockable is ERC20, Ownable {
     /**
     * @return the entire list of allowed sender addresses
     */
-    function allowedSenderAddresses() public view onlyOwner returns (address[] memory) {
+    function allowedSenderAddresses() public view returns (address[] memory) {
         return _allowedSenderAddressArray;
     }
 
@@ -187,16 +187,9 @@ contract Lockable is ERC20, Ownable {
     }
 
     /**
-     * @return the sender's unlock date
-     */
-    function myUnlockDate() public view whenLockingTransfers returns (uint) {
-        return _unlockDates[msg.sender];
-    }
-
-    /**
      * @return an address's unlock date
      */
-    function unlockDateOf(address _address) public view onlyOwner whenLockingTransfers returns (uint) {
+    function unlockDateOf(address _address) public view returns (uint) {
         return _unlockDates[_address];
     }
 
