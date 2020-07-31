@@ -10,7 +10,7 @@
     "compile": "truffle compile --all",
     "ganache": "ganache-cli -m 'term seven toe spoon door finger social coffee pitch crouch glide lamp'",
     "test": "node node_modules/truffle/build/cli.bundled.js test",
-    "generate_abi_bin": "cd node_modules && solcjs ../contracts/EMTK.sol --bin --abi --optimize openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol openzeppelin-solidity/contracts/lifecycle/Destructible.sol openzeppelin-solidity/contracts/ownership/Ownable.sol openzeppelin-solidity/contracts/token/ERC20/BasicToken.sol openzeppelin-solidity/contracts/token/ERC20/ERC20.sol openzeppelin-solidity/contracts/math/SafeMath.sol openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol -o ../output",
+    "generate_abi_bin": "cd node_modules && solcjs ../contracts/EMU.sol --bin --abi --optimize openzeppelin-solidity/contracts/ownership/Ownable.sol openzeppelin-solidity/contracts/token/ERC20/ERC20.sol openzeppelin-solidity/contracts/token/ERC20/IERC20.sol openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol openzeppelin-solidity/contracts/math/SafeMath.sol ../contracts/Lockable.sol -o ../output",
     "remix": "remixd -s . --remix-ide https://remix.ethereum.org"
   },
   "author": "Nir Peled",
@@ -23,6 +23,7 @@
     "remixd": "^0.1.8-alpha.6",
     "truffle": "5.0.2",
     "truffle-hdwallet-provider": "^0.0.5",
-    "web3": "^1.0.0-beta.48"
+    "web3": "^1.0.0-beta.48",
+    "solc": "^0.5.17"
   }
 }
